@@ -50,9 +50,9 @@ On linux, press `shift` command. On MacOS, press `alt/opt` or `alt/opt`+`cmd` in
 
 * Beginning of file: `gg`
 
-* End of file: `\$`
+* End of line: `\$`
 
-* End of line: `G`
+* End of file: `G`
 
 ### Indentation
 To indent the whole document: `gg=G`. `gg` is to get to the beginning of the file, `=` is to indent, `G` to the end of the file. To fix the indentation of a whole block: `=%` (standing in an opening bracket).You can also try `:set paste` before copying (so the identation won't change) and then `:set nopaste` when finished copying. More info: https://stackoverflow.com/questions/506075/how-do-i-fix-the-indentation-of-an-entire-file-in-vi
