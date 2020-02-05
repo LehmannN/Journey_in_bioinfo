@@ -1,0 +1,257 @@
+---
+params:
+    set_title: "Annotation Files"
+    output_dir: 'output/'
+title: "`r params$set_title`"
+date: "`r Sys.Date()`"
+author: Lehmann
+output:
+    rmdformats::material:
+        highlight:      kate
+        self_contained: true
+        code_folding:   show
+        thumbnails:     true
+        gallery:        true
+        fig_width:      4
+        fig_height:     4
+        df_print:       kable
+        fig_caption:    yes
+---
+
+
+```{r knitr_init, echo=FALSE, results="asis", cache=FALSE}
+library(knitr)
+library(rmdformats)
+
+## Global options
+options(max.print = "75")
+opts_knit$set(width = 75)
+opts_chunk$set(echo         = TRUE,
+               cache        = FALSE,
+               cache.lazy   = FALSE,
+               prompt       = FALSE,
+               tidy         = FALSE,
+               message      = FALSE,
+               warning      = FALSE,
+               comment      = NA,
+               fig.path     = 'images_output/',
+               out.width    = '70%',
+               fig.align    = 'center')
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(refGenome)
+library(GenomicRanges)
+library(GenomicFeatures)
+library(rtracklayer)
+library(Gviz)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(combinat)
+library("optparse")
+library("tidyverse")
+library("UpSetR")
+library("eulerr")
+library("RColorBrewer")
+library("gridExtra")
+library("grid")
+```
+
+
+# What's wrong with my GTF file ?
+
+### When I load it in IGV, it tells me to "zoom in to see features".
+IGV should not behave like this. When you load a GTF file, a coverage plot should appear. The higher the bar is, the more genes you have in the region.
+First, we're going to visualize the number of genes per chromosomes.
+
+```{bash, eval=FALSE}
+# Modification on NCBI GTF file
+NCBI='input/ncbi/ref/ref_GRCg6a_top_level.gtf'
+
+# Make sure every feature has a gene_id
+sed -i '/gene_id/! s/gene_name/gene_id/1' $NCBI
+sed -i 's/geneID/gene_id/1' $NCBI
+
+# change MT genes from "CDS" to "exon" (otherwise it throws errors like "no exon associated to these CDS")
+sed -i '1,37{s/CDS/exon/}' $NCBI
+
+# When no gene_name and no gene_id: copied the transcript_id (only for MT features)
+```
+
+```{r ref, warning=FALSE, eval=FALSE}
+# Specify paths to all annotation files
+gtf_NCBI            <- 'input/ncbi/ref/ref_GRCg6a_top_level.modified.gtf'
+#gff_NCBI            <- 'input/ncbi/ref/ref_GRCg6a_top_level.gff3' # orphan exons
+gtf_UCSC            <- 'input/ucsc/ref/galGal6.ncbiRefSeq.gtf'
+gtf_ensembl         <- 'input/ensembl/ref/Gallus_gallus.GRCg6a.98.gtf'
+#gtf_lr_allbam_NCBI      <- 'input/annot/built/ncbi/lr_allbam_sorted.out.gtf'
+#gtf_lr_guided_NCBI      <- 'input/annot/built/ncbi/lr_guided_allbam_sorted.out.gtf'
+#gtf_merged_sgtie_NCBI   <- 'input/annot/built/ncbi/merged_stringtie_sorted.out.gtf'
+# missing data (LR ensembl and UCSC) !!
+
+dfList <- list(gtf_NCBI,
+               gtf_UCSC,
+               gtf_ensembl
+               )
+
+get_extension <- function(x) {
+    ext <- strsplit(basename(x), split="\\.")[[1]]
+    return(ext[length(ext)])
+}
+
+# Load data as TxDb objects
+dfList <- lapply(dfList, function(x) {
+                print(x)
+                ext <- get_extension(x)
+                tmp <- GenomicFeatures::makeTxDbFromGFF(x, format=ext)
+                tmp <- as.data.frame(genes(tmp))
+                tmp <- tmp %>% group_by(seqnames) %>% tally()
+               })
+saveRDS(dfList, file = "output/robj/dfList_ref.rds")
+```
+
+```{r ref-plots}
+dfList <- readRDS(file = "output/robj/dfList_ref.rds")
+
+# Construct a histogram for each GTF file
+make_hist <- function(df){
+    ggplot(df, aes(x = seqnames, y = n)) +
+    geom_col()
+    }
+p <- lapply(dfList, make_hist)
+p
+```
+
+If you need to extract other features than genes, instead of `genes(tmp)` you can also do `transcripts(tmp)`, `exons(tmp)`, `cds(tmp)` or `promoters(tmp)`. See `GenomicFeatures` [man page](https://rdrr.io/bioc/GenomicFeatures/man/transcripts.html).
+
+### Explore the converted annotation file
+
+```{bash, eval=FALSE}
+gtf_NCBI='input/ncbi/ref/ref_GRCg6a_top_level.modified.gtf'
+gtf_ensembl='input/ensembl/ref/Gallus_gallus.GRCg6a.98.gtf'
+
+# NCBI to UCSC
+f=${gtf_NCBI}
+out=$(basename $f .gtf)
+cvbio UpdateContigNames \
+    -i $f \
+    -o output/ref_convert/${out}_NCBI2UCSC_skipmissing.gtf \
+    -m /kingdoms/csb/workspace6/lehmann/ChromosomeMappings/galGal6_NCBI2UCSC.txt \
+    --comment-chars '#' \
+    --columns 0 \
+    --skip-missing true
+
+# ensembl to UCSC
+f=${gtf_ensembl}
+out=$(basename $f .gtf)
+cvbio UpdateContigNames \
+    -i $f \
+    -o output/ref_convert/${out}_ensembl2UCSC_skipmissing.gtf \
+    -m /kingdoms/csb/workspace6/lehmann/ChromosomeMappings/galGal6_ensembl2UCSC.txt \
+    --comment-chars '#' \
+    --columns 0 \
+    --skip-missing true
+
+wc -l output/ref_convert/*.gtf
+diff output/ref_convert/Gall*.gtf
+diff output/ref_convert/ref*.gtf
+
+# There is no difference between the converted files obtained with the option "skip-missing".
+```
+
+```{r convert}
+gtf_UCSC            <- 'input/ucsc/ref/galGal6.ncbiRefSeq.gtf'
+gtf_ensembl2UCSC    <- 'output/ref_convert/Gallus_gallus.GRCg6a.98_ensembl2UCSC.gtf'
+gtf_NCBI2UCSC       <- 'output/ref_convert/ref_GRCg6a_top_level.modified_NCBI2UCSC.gtf'
+
+dfList_names <- list(gtf_UCSC,
+               gtf_ensembl2UCSC,
+               gtf_NCBI2UCSC
+               )
+
+get_extension <- function(x) {
+    ext <- strsplit(basename(x), split="\\.")[[1]]
+    return(ext[length(ext)])
+}
+
+# Load data as TxDb objects
+dfList <- lapply(dfList_names, function(x) {
+                print(x)
+                ext <- get_extension(x)
+                tmp <- GenomicFeatures::makeTxDbFromGFF(x, format=ext)
+                tmp <- as.data.frame(genes(tmp))
+               })
+
+dfList_counts <- lapply(dfList, function(x) {
+                x %>% group_by(seqnames) %>% tally()
+                })
+
+saveRDS(dfList, file = "output/robj/dfList_converted.rds")
+p <- lapply(dfList_counts, make_hist)
+p
+```
+
+### Compare annotations in terms of overlaps
+
+#### Build BED equivalent to GTF files
+```{r, eval=FALSE}
+lapply(dfList_names, function(x) {
+                     tmp <- GenomicFeatures::makeTxDbFromGFF(x, format="gtf")
+                     tmp <- as.data.frame(genes(tmp))
+                     tmp$width <- 0
+                     colnames(tmp)[4] <- "score"
+                     tmp <- tmp[, c(1,2,3,6,4,5)]
+                     write.table(tmp,
+                                 file=paste0("output/stats_annotation/genes_" ,
+                                             basename(x), ".bed"),
+                                 sep="\t",
+                                 quote=FALSE,
+                                 row.names=FALSE,
+                                 col.names=FALSE)
+               })
+
+```
+
+The number of genes in each BED files is:
+```{bash}
+wc -l output/stats_annotation/*.bed
+```
+
+#### Find intersection between BED files
+```{bash, eval=FALSE}
+bed1="output/stats_annotation/genes_galGal6_ensembl2UCSC.gtf.bed"
+bed2="output/stats_annotation/genes_galGal6_NCBI2UCSC.gtf.bed"
+bed3="output/stats_annotation/genes_galGal6.ncbiRefSeq.gtf.bed"
+
+# Build intersections
+intersectBed -a $bed1 -b $bed2 | intersectBed -a - -b $bed3 > \
+output/stats_annotation/intersectbed.bed
+
+# Get Venn diagram out of intersections
+intervene venn -i output/stats_annotation/genes_*.bed --output output/intervene_results/
+# Get Upset plot
+intervene upset -i output/stats_annotation/genes_*.bed --output output/intervene_results/
+```
+
+We obtain a ![Venn diagram](output/intervene_results/Intervene_venn.pdf){width=65%} and an ![Upset plot](output/intervene_results/Intervene_upset.pdf) both showing the intersections between the 3 references.
+
+
+#### Assign reads to the different annotation files
+```{r, eval=FALSE}
+gtf_ensembl2UCSC='output/ref_convert/Gallus_gallus.GRCg6a.98_ensembl2UCSC.gtf'
+gtf_NCBI2UCSC='output/ref_convert/ref_GRCg6a_top_level.modified_NCBI2UCSC.gtf'
+gtf_UCSC='input/ucsc/ref/galGal6.ncbiRefSeq.gtf'
+
+for gtf in ${gtf_ensembl2UCSC} ${gtf_NCBI2UCSC} ${gtf_UCSC}
+do
+    echo $gtf
+    featureCounts -T 52 -a $gtf \
+                -o ${gtf}.fC \
+                -t exon -g gene_id \
+                -R BAM input/long_reads/lr_merged_UCSC.bam 2> ${gtf}.fC.log
+done
+
+#samtools sort ${gtf}.fC -o assigned_sorted.bam
+#samtools index assigned_sorted.bam
+```
