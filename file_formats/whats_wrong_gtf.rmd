@@ -61,7 +61,7 @@ library("grid")
 
 # What's wrong with my GTF file ?
 
-### When I load it in IGV, it tells me to "zoom in to see features".
+## When I load it in IGV, it tells me to "zoom in to see features" or I can't see anything.
 IGV should not behave like this. When you load a GTF file, a coverage plot should appear. The higher the bar is, the more genes you have in the region.
 First, we're going to visualize the number of genes per chromosomes.
 
@@ -113,11 +113,15 @@ saveRDS(dfList, file = "output/robj/dfList_ref.rds")
 
 ```{r ref-plots}
 dfList <- readRDS(file = "output/robj/dfList_ref.rds")
+names(dfList) <- c('NCBI', 'UCSC', 'Ensembl')
+i <- 1
 
 # Construct a histogram for each GTF file
 make_hist <- function(df){
+    names(dfList)[i]
     ggplot(df, aes(x = seqnames, y = n)) +
-    geom_col()
+        geom_col()
+    i <- i + 1
     }
 p <- lapply(dfList, make_hist)
 p
@@ -125,7 +129,7 @@ p
 
 If you need to extract other features than genes, instead of `genes(tmp)` you can also do `transcripts(tmp)`, `exons(tmp)`, `cds(tmp)` or `promoters(tmp)`. See `GenomicFeatures` [man page](https://rdrr.io/bioc/GenomicFeatures/man/transcripts.html).
 
-### Explore the converted annotation file
+## Explore the converted annotation file
 
 ```{bash, eval=FALSE}
 gtf_NCBI='input/ncbi/ref/ref_GRCg6a_top_level.modified.gtf'
@@ -192,9 +196,9 @@ p <- lapply(dfList_counts, make_hist)
 p
 ```
 
-### Compare annotations in terms of overlaps
+## Compare annotations in terms of overlaps
 
-#### Build BED equivalent to GTF files
+### Build BED equivalent to GTF files
 ```{r, eval=FALSE}
 lapply(dfList_names, function(x) {
                      tmp <- GenomicFeatures::makeTxDbFromGFF(x, format="gtf")
@@ -218,7 +222,7 @@ The number of genes in each BED files is:
 wc -l output/stats_annotation/*.bed
 ```
 
-#### Find intersection between BED files
+### Find intersection between BED files
 ```{bash, eval=FALSE}
 bed1="output/stats_annotation/genes_galGal6_ensembl2UCSC.gtf.bed"
 bed2="output/stats_annotation/genes_galGal6_NCBI2UCSC.gtf.bed"
@@ -237,7 +241,7 @@ intervene upset -i output/stats_annotation/genes_*.bed --output output/intervene
 We obtain a ![Venn diagram](output/intervene_results/Intervene_venn.pdf){width=65%} and an ![Upset plot](output/intervene_results/Intervene_upset.pdf) both showing the intersections between the 3 references.
 
 
-#### Assign reads to the different annotation files
+### Assign reads to the different annotation files
 ```{r, eval=FALSE}
 gtf_ensembl2UCSC='output/ref_convert/Gallus_gallus.GRCg6a.98_ensembl2UCSC.gtf'
 gtf_NCBI2UCSC='output/ref_convert/ref_GRCg6a_top_level.modified_NCBI2UCSC.gtf'
