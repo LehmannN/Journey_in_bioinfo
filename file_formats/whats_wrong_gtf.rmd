@@ -37,6 +37,7 @@ opts_chunk$set(echo         = TRUE,
                fig.path     = 'images_output/',
                out.width    = '70%',
                fig.align    = 'center')
+source('whats_wrong_gtf.R')
 ```
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
@@ -79,10 +80,11 @@ sed -i '1,37{s/CDS/exon/}' $NCBI
 # When no gene_name and no gene_id: copied the transcript_id (only for MT features)
 ```
 
+We cannot use the GFF from NCBI beceause it has "orphan exons". This means that some exons are not associated to any gene. We will use a modified GTF file instead.
+
 ```{r ref, warning=FALSE, eval=FALSE}
 # Specify paths to all annotation files
 gtf_NCBI            <- 'input/ncbi/ref/ref_GRCg6a_top_level.modified.gtf'
-#gff_NCBI            <- 'input/ncbi/ref/ref_GRCg6a_top_level.gff3' # orphan exons
 gtf_UCSC            <- 'input/ucsc/ref/galGal6.ncbiRefSeq.gtf'
 gtf_ensembl         <- 'input/ensembl/ref/Gallus_gallus.GRCg6a.98.gtf'
 #gtf_lr_allbam_NCBI      <- 'input/annot/built/ncbi/lr_allbam_sorted.out.gtf'
@@ -238,7 +240,7 @@ intervene venn -i output/stats_annotation/genes_*.bed --output output/intervene_
 intervene upset -i output/stats_annotation/genes_*.bed --output output/intervene_results/
 ```
 
-We obtain a ![Venn diagram](output/intervene_results/Intervene_venn.pdf){width=65%} and an ![Upset plot](output/intervene_results/Intervene_upset.pdf) both showing the intersections between the 3 references.
+We obtain a ![Venn diagram](output/intervene_results/Intervene_venn.pdf){width=80%} and an ![Upset plot](output/intervene_results/Intervene_upset.pdf){width=80%} both showing the intersections between the 3 references.
 
 
 ### Assign reads to the different annotation files

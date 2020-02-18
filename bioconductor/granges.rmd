@@ -1,0 +1,45 @@
+---
+params:
+    set_title: "GRanges and co"
+    output_dir: 'output/'
+title: "`r params$set_title`"
+date: "`r Sys.Date()`"
+author: Lehmann
+output:
+    rmdformats::material:
+        highlight:      kate
+        self_contained: true
+        code_folding:   show
+        thumbnails:     true
+        gallery:        true
+        fig_width:      4
+        fig_height:     4
+        df_print:       kable
+        fig_caption:    yes
+---
+
+
+```{r knitr_init, echo=FALSE, results="asis", cache=FALSE}
+library(knitr)
+library(rmdformats)
+
+## Global options
+options(max.print = "75")
+opts_knit$set(width = 75)
+opts_chunk$set(echo         = TRUE,
+               cache        = FALSE,
+               cache.lazy   = FALSE,
+               prompt       = FALSE,
+               tidy         = FALSE,
+               message      = FALSE,
+               warning      = FALSE,
+               comment      = NA,
+               fig.path     = 'images_output/',
+               out.width    = '70%',
+               fig.align    = 'center')
+```
+
+# GRanges and co
+
+An nice introduction [here](http://web1.sph.emory.edu/users/hwu30/teaching/bioc/genomicRanges.pdf).
+GenomicRanges [how to](http://bioconductor.org/packages/devel/bioc/vignettes/GenomicRanges/inst/doc/GenomicRangesHOWTOs.pdf).

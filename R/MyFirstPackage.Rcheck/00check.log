@@ -1,0 +1,10 @@
+* using log directory ‘/Volumes/kingdoms-workspace06/lehmann/Journey_in_bioinfo/R/MyFirstPackage.Rcheck’
+* using R version 3.5.2 (2018-12-20)
+* using platform: x86_64-apple-darwin15.6.0 (64-bit)
+* using session charset: UTF-8
+* using options ‘--no-manual --as-cran’
+* checking for file ‘MyFirstPackage/DESCRIPTION’ ... ERROR
+Champs requis mais manquants ou vides :
+  ‘License’ ‘Description’ ‘Author’ ‘Maintainer’
+* DONE
+Status: 1 ERROR

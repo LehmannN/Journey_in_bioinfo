@@ -1,0 +1,99 @@
+---
+params:
+    set_title: "Bash tips"
+    output_dir: 'output/'
+title: "`r params$set_title`"
+date: "`r Sys.Date()`"
+author: Lehmann
+output:
+    rmdformats::material:
+        highlight:      kate
+        self_contained: true
+        code_folding:   show
+        thumbnails:     true
+        gallery:        true
+        fig_width:      4
+        fig_height:     4
+        df_print:       kable
+        fig_caption:    yes
+---
+
+
+```{r knitr_init, echo=FALSE, results="asis", cache=FALSE}
+library(knitr)
+library(rmdformats)
+
+## Global options
+options(max.print = "75")
+opts_knit$set(width = 75)
+opts_chunk$set(echo         = TRUE,
+               cache        = FALSE,
+               cache.lazy   = FALSE,
+               prompt       = FALSE,
+               tidy         = FALSE,
+               message      = FALSE,
+               warning      = FALSE,
+               comment      = NA,
+               fig.path     = 'images_output/',
+               out.width    = '70%',
+               fig.align    = 'center')
+```
+
+# Some tips to use bash more efficiently
+
+## How to detect the number of cores  ?
+On MacOS, you can type `sysctl -n hw.ncpu`. To be more precise, you can also type `sysctl -n hw.physicalcpu`, `sysctl -n hw.logicalcpu`. Try also `sysctl -a | grep cpu` if you need much more details.
+On Linux, you can just do `nproc`.
+
+## What is the difference between physical and logical cores ?
+
+## How to detect the memory size ?
+On MacOS: `sysctl hw.memsize`. On linux, use `free` (`free -m` or `free -g` will give you results in Mbs and Gbs respectively)  or `vmstat -s`. Or `cat /proc/meminfo`.
+
+## What does the `export` command means ?
+This section is inspired from [this excellent article](https://linuxconfig.org/learning-linux-commands-export) from linuxconfig.org.
+Let's see 2 examples, with and without the `export` command:
+```{bash}
+VAR="hello"
+echo $VAR # output "hello"
+bash
+echo $VAR # no output
+```
+
+```{bash}
+VAR="hello"
+echo $VAR # output "hello"
+export $VAR
+bash
+echo $VAR # output "hello"
+```
+
+Typing just `export` in the shell will show you all the variable names marked for an export to a child process. You can also export a function, with the command `export -f`.
+```{bash}
+printf_function () { echo "hello"; }
+printf_function
+export -f printf_function
+bash
+printf_function
+```
+
+To remove a name from export list: `export -n VAR`.
+
+## How to generate random filenames ?
+Type `mktemp`. 
+
+## What does `$$` mean ?
+In bash, `$$` is the process ID (PID).
+
+## What is a parent / child process ?
+Any process created will normally have a parent process from which it was created and will be considered as a child of this parent process. For example:
+
+```{bash}
+VAR=$(echo $$)
+echo $VAR      # parent
+bash
+echo $$        # child
+ps --ppid $VAR
+```
+
+

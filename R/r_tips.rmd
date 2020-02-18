@@ -1,0 +1,66 @@
+---
+params:
+    set_title: "Vim tips"
+    output_dir: 'output/'
+title: "`r params$set_title`"
+date: "`r Sys.Date()`"
+author: Lehmann
+output:
+    rmdformats::material:
+        highlight:      kate
+        self_contained: true
+        code_folding:   show
+        thumbnails:     true
+        gallery:        true
+        fig_width:      4
+        fig_height:     4
+        df_print:       kable
+        fig_caption:    yes
+---
+
+
+```{r knitr_init, echo=FALSE, results="asis", cache=FALSE}
+library(knitr)
+library(rmdformats)
+
+## Global options
+options(max.print = "75")
+opts_knit$set(width = 75)
+opts_chunk$set(echo         = TRUE,
+               cache        = FALSE,
+               cache.lazy   = FALSE,
+               prompt       = FALSE,
+               tidy         = FALSE,
+               message      = FALSE,
+               warning      = FALSE,
+               comment      = NA,
+               fig.path     = 'images_output/',
+               out.width    = '70%',
+               fig.align    = 'center')
+```
+
+# Some tips to use R more efficiently
+
+## How do you see the body of a function ?
+In Rstudio, you can press F2 while cursor is on any function, click on a function name while holding Ctrl or Cmd, or try `View(function_name)`. In the command line you can directly type the name of the function, e.g. `saveRDS`, or type `body(saveRDS)`, or `print(saveRDS)`. However, this will work only it's the function are written in R (not a .Primitive or .C function).
+
+## What is a S3 method ?
+
+## How do you convert a vector to a df ?
+
+```{r}
+c <- 1:6            # vector
+c
+dim(c) <- c(3,2)    # df
+c
+```
+
+## How to use multiple versions of R ?
+Check [this paragraph](https://docs.rstudio.com/ide/server-pro/r-versions.html#using-multiple-versions-of-r-concurrently) from the Rstudio documentation.
+
+## How to build a R package ?
+Try this super nice [blog posts](https://stirlingcodingclub.github.io/SCC_R_package/notebook/Rpackage_notes.html) and [this one](http://web.mit.edu/insong/www/pdf/rpackage_instructions.pdf) aslo.
+Check if package is OK: `devtools::check(document = FALSE)`. To know about building documentation, have a look at [this](http://kbroman.org/pkg_primer/pages/docs.html).
+
+## How to call C/C++ code from R ?
+Inspired from [this](https://www.r-bloggers.com/three-ways-to-call-cc-from-r/).
